@@ -8,7 +8,7 @@ stop:
 	-docker rm $(shell docker ps -a -q)
 # build process
 build:
-	docker build -t android:latest .
+	docker build --build-arg userid=1001 --build-arg groupid=1001 --build-arg username=android -t android:latest .
 shell:
 	docker run -i --mount src=`pwd`,target=/android,type=bind -w /android -t android
 push:

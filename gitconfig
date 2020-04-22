@@ -1,0 +1,7 @@
+[user]
+	email = cywang.eda@gmail.com
+	name = chengyehwang
+[core]
+	editor = vim
+[credential]
+	helper = cache
