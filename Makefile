@@ -12,7 +12,8 @@ stop:
 # android process
 TAG=android-10.0.0_r33
 repo:
-	export TAG=$(TAG) ; cd $(TAG); run_repo.sh
+	mkdir -p $(TAG)
+	export TAG=$(TAG) ; cd $(TAG); ../run_repo.sh
 
 # docker build process
 build:
