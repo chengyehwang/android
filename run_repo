@@ -1,0 +1,3 @@
+TAG=android-10.0.0_r33
+repo init -u https://android.googlesource.com/platform/manifest -b $(TAG)
+repo sync
