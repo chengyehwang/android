@@ -18,6 +18,9 @@ repo:
 simpleperf:
 	cd $(TAG); ../run_simpleperf.sh
 
+du:
+	cd $(TAG) ; du -k --max-depth=1
+
 # docker build process
 build:
 	docker build --build-arg userid=1001 --build-arg groupid=1001 --build-arg username=android -t android:latest .
