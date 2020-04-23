@@ -15,6 +15,9 @@ repo:
 	mkdir -p $(TAG)
 	export TAG=$(TAG) ; cd $(TAG); ../run_repo.sh
 
+simpleperf:
+	cd $(TAG); ../run_simpleperf.sh
+
 # docker build process
 build:
 	docker build --build-arg userid=1001 --build-arg groupid=1001 --build-arg username=android -t android:latest .
