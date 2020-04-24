@@ -11,11 +11,13 @@ stop:
 
 # android process
 TAG=android-10.0.0_r33
-repo:
+init:
 	mkdir -p $(TAG)
-	export TAG=$(TAG) ; cd $(TAG); ../run_repo.sh
+	export TAG=$(TAG) ; cd $(TAG); ../run_repo_init.sh
+sync:
+	cd $(TAG) ; ../run_repo_sync.sh
 
-simpleperf:
+simpleperf: sync
 	cd $(TAG); ../run_simpleperf.sh
 
 du:
