@@ -10,7 +10,7 @@ import unittest
 import subprocess
 
 from pyparsing import \
-    Word, Suppress, Literal, alphanums, Optional, delimitedList, Group, OneOrMore, StringEnd, \
+    Word, Suppress, Literal, alphas, alphanums, nums, Optional, delimitedList, Group, OneOrMore, StringEnd, \
     QuotedString, Forward, ZeroOrMore, cppStyleComment, cStyleComment, ParseException
 
 class MissingVariable(Exception):
@@ -171,11 +171,14 @@ class Soong:
         false = Literal('false').setParseAction(lambda v: Wrap(False))
 
         # Variable reference
-        varref = Word(alphanums + "_")
+        varref = Word(alphas, alphanums + "_")
         varref.setParseAction(self.varref_action)
 
         # Boolean literal true/false
         boolean = true | false
+
+        # number
+        number = Word(nums)
 
         # String
         string = QuotedString('"', escChar='\\').setParseAction(lambda s, l, t: t[0])
@@ -191,7 +194,7 @@ class Soong:
         stringlist.setParseAction(stringlist_action)
 
         # Concatenation of strings, strings lists and variables
-        element = delimitedList(string|stringlist|varref, delim='+')
+        element = delimitedList(string|stringlist|varref|number, delim='+')
         element.setParseAction(element_action)
 
         # Data
@@ -984,13 +987,18 @@ class TestSoong(unittest.TestCase):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", nargs='?', const=True, default=False)
+    parser.add_argument("-file", help="parse this file")
     args = parser.parse_args()
 
     print(args)
-    if args.d:
+    if args.file is not None:
+        find_cmd = 'ls %s'%args.file
+        #find_cmd = 'find . -name "%s"'%args.file
+    elif args.d:
         find_cmd = 'find . -maxdepth 1 -name "Android.bp"'
     else:
         find_cmd = 'find . -name "Android.bp"'
+    print('find files by:', find_cmd)
     subprocess = subprocess.Popen(find_cmd, shell=True, stdout=subprocess.PIPE)
     find_string = subprocess.stdout.read()
     files = find_string.split()
