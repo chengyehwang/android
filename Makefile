@@ -20,6 +20,9 @@ sync:
 simpleperf: sync
 	cd $(TAG); ../run_simpleperf.sh
 
+android_deps:
+	python3 android_deps.py
+
 du:
 	cd $(TAG) ; du -k --max-depth=1
 
