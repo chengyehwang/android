@@ -28,8 +28,10 @@ for file in data:
             deps[file]['feature'].append(section[1]['name'])
         if 'deps' in section[1]:
             section_dep = section[1]['deps']
-            #print(section_dep)
             deps[file]['deps'].extend(section_dep)
+        if 'static_libs' in section[1]:
+            static_libs = section[1]['static_libs']
+            deps[file]['deps'].extend(static_libs)
 
 pd.DataFrame.from_dict(deps, orient='index')
 
@@ -44,8 +46,8 @@ selection = []
 def select(file):
     global selection
     for dep in deps[file]['deps']:
-        if feature_map[dep] not in selection:
-            selection.append(file)
+        if dep not in selection:
+            selection.append(dep)
             select(feature_map[dep])
 
 
@@ -56,7 +58,12 @@ for file in deps:
         root.append(file)
 
 for file in root:
-    print(file, select(file))
+    selection = []
+    select(file)
+    print('****%s'%file)
+    for feature in selection:
+        print(feature)
+        print('    ', feature_map[feature])
 # -
 
 
