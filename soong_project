@@ -242,6 +242,13 @@ class Soong:
             raise DuplicateVariable(var)
         data = tokens[1].unwrap()
         self.variables()[var] = data
+        if var == 'subdirs':
+            print(data)
+            for dir in data:
+                path = self.__basedir + '/' + dir
+                print('add subdirs', path)
+                find_cmd = 'find %s -name "Android.bp"'%path
+                add_file(search_file(find_cmd))
 
     def varref_action(self, tokens):
         varname = tokens[0]
@@ -985,6 +992,30 @@ class TestSoong(unittest.TestCase):
         self.assert_mk("067_escape_hash", '/section_1',
                        'ELEM1 = da\\#ta1\nNAME = sec1\n', "")
 
+file_list = []
+file_index = 0
+def add_file(new_files):
+    global file_list
+    for file in new_files:
+        if file not in file_list:
+            file_list.append(file)
+
+def get_file():
+    global file_list
+    global file_index
+    if file_index < len(file_list):
+        ret = file_list[file_index]
+        file_index += 1
+        return ret
+    else:
+        return None
+
+def search_file(find_cmd):
+    pipe = subprocess.Popen(find_cmd, shell=True, stdout=subprocess.PIPE)
+    find_string = pipe.stdout.read()
+    find_string = bytes.decode(find_string)
+    files = find_string.split()
+    return files
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -1003,15 +1034,17 @@ if __name__ == "__main__":
     else:
         find_cmd = 'find . -name "Android.bp"'
     print('find files by:', find_cmd)
-    subprocess = subprocess.Popen(find_cmd, shell=True, stdout=subprocess.PIPE)
-    find_string = subprocess.stdout.read()
-    files = find_string.split()
+    add_file(search_file(find_cmd))
     data = {}
-    for file in files:
-        file = bytes.decode(file)
+    while True:
+        file = get_file()
+        if file == None:
+            break
         print(file)
-        SOONG_PARSER = Soong('.')
-        SOONG_PARSER.parse(file)
+        dirname = os.path.dirname(file)
+        basename = os.path.basename(file)
+        SOONG_PARSER = Soong(dirname)
+        SOONG_PARSER.parse(basename)
         data[file] = SOONG_PARSER.data()
 
     with open('android_bp.json','w') as file_handle:

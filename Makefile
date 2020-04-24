@@ -21,6 +21,7 @@ simpleperf: sync
 	cd $(TAG); ../run_simpleperf.sh
 
 android_deps:
+	./soong_project -dir=$(TAG)
 	python3 android_deps.py
 
 du:
