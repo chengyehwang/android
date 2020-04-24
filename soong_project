@@ -982,74 +982,9 @@ class TestSoong(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    PARSER = argparse.ArgumentParser(description='Translate soong files to make statements')
-    PARSER.add_argument('-v', '--verbose', help='Verbose output', action='store_true')
-    PARSER.add_argument('-b', '--basedir', help='Base directory', action='store')
-    PARSER.add_argument('-i', '--input', help='Input file to load', action='append')
-    PARSER.add_argument('-o', '--output', help='Output file', action='store')
-    PARSER.add_argument('-p', '--prefix', help='Prepend prefix to variables',
-                        action='store', default='')
-    PARSER.add_argument('--test', help='Run tests', action='store_true')
-    PARSER.add_argument('queries', help='Query data from soong file', nargs='*')
-    ARGS = PARSER.parse_args()
 
-    if ARGS.test:
-        SUITE = unittest.TestLoader().loadTestsFromTestCase(TestSoong)
-        TESTRESULT = unittest.TextTestRunner().run(SUITE)
+    SOONG_PARSER = Soong('.')
+    SOONG_PARSER.parse('Android.bp')
+    data = SOONG_PARSER.data()
+    print(data)
 
-        if len(TESTRESULT.failures) > 0 or len(TESTRESULT.errors) > 0:
-            sys.exit(1)
-
-        print("Testing Android build files ", end='')
-        NO_FILES = 0
-        SOONG_PARSER = Soong(ignore_vars=['subdirs', 'build', 'common_CFLAGS', 'common_cflags'])
-        for root, dirs, files in os.walk('tests/android'):
-            for soong_file in sorted(files):
-                print('.', end='', flush=True)
-                NO_FILES += 1
-                full = root + "/" + soong_file
-                try:
-                    SOONG_PARSER.parse(full)
-                except MissingVariable:
-                    pass
-                except Exception:
-                    print("\n" + full)
-                    raise
-
-        print("\n%d files tests" % (NO_FILES))
-        sys.exit(0)
-
-    if not ARGS.basedir:
-        print("No --basedir directory set")
-        PARSER.print_help()
-        sys.exit(1)
-
-    if not ARGS.input:
-        print("No --input file set")
-        PARSER.print_help()
-        sys.exit(1)
-
-    if not ARGS.output:
-        print("No --output file set")
-        PARSER.print_help()
-        sys.exit(1)
-
-    if len(ARGS.queries) == 0:
-        print("No query")
-        PARSER.print_help()
-        sys.exit(1)
-
-    SOONG_PARSER = Soong(ARGS.basedir)
-    for soong_file in ARGS.input:
-        SOONG_PARSER.parse(soong_file)
-
-    SOONG_PARSER.resolve_defaults()
-
-    try:
-        QUERY_TEXT = "|".join(ARGS.queries)
-        QUERY_RESULT = SOONG_PARSER.query(QUERY_TEXT)
-        with open(ARGS.output, 'w') as outfile:
-            outfile.write(make_vars(QUERY_RESULT, ARGS.prefix))
-    except Exception as exception:
-        print('$(error ERROR EXECUTING GNOOS: ' + str(exception) + ')')
-        raise
