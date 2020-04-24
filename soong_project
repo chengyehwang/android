@@ -982,15 +982,25 @@ class TestSoong(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", nargs='?', const=True, default=False)
+    args = parser.parse_args()
 
-    subprocess = subprocess.Popen('find . -name "Android.bp"', shell=True, stdout=subprocess.PIPE)
+    print(args)
+    if args.d:
+        find_cmd = 'find . -maxdepth 1 -name "Android.bp"'
+    else:
+        find_cmd = 'find . -name "Android.bp"'
+    subprocess = subprocess.Popen(find_cmd, shell=True, stdout=subprocess.PIPE)
     find_string = subprocess.stdout.read()
     files = find_string.split()
+    data = {}
     for file in files:
         file = bytes.decode(file)
         print(file)
         SOONG_PARSER = Soong('.')
         SOONG_PARSER.parse(file)
-        data = SOONG_PARSER.data()
-        print(data)
+        data[file] = SOONG_PARSER.data()
+
+    print(data)
 
