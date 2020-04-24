@@ -7,6 +7,7 @@ import sys
 import copy
 import argparse
 import unittest
+import subprocess
 
 from pyparsing import \
     Word, Suppress, Literal, alphanums, Optional, delimitedList, Group, OneOrMore, StringEnd, \
@@ -982,9 +983,14 @@ class TestSoong(unittest.TestCase):
 
 if __name__ == "__main__":
 
-
-    SOONG_PARSER = Soong('.')
-    SOONG_PARSER.parse('Android.bp')
-    data = SOONG_PARSER.data()
-    print(data)
+    subprocess = subprocess.Popen('find . -name "Android.bp"', shell=True, stdout=subprocess.PIPE)
+    find_string = subprocess.stdout.read()
+    files = find_string.split()
+    for file in files:
+        file = bytes.decode(file)
+        print(file)
+        SOONG_PARSER = Soong('.')
+        SOONG_PARSER.parse(file)
+        data = SOONG_PARSER.data()
+        print(data)
 
