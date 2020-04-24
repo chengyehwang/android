@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+
+import sys
+import pprint
+import argparse
+from pyparsing import *
+from pathlib import Path
+
+colon  = Literal (':')
+name   = Word (alphanums + "_")
+equals = Literal ('=')
+
+
+def make_error (message):
+    print ("$(error " + sys.argv[0] + ": " + message + ")\n")
+
+class Attr:
+
+    def __init__ (self, name, value):
+        self._name  = name
+        self._value = value
+
+    def __repr__ (self):
+        return "[@" + self._name + "=" + self._value + "]"
+
+    def name (self):
+        return self._name
+
+    def value (self):
+        return self._value
+
+class NullAttr:
+
+    def __repr__ (self):
+        return ""
+
+class Subquery:
+
+    def __init__ (self, name, attr):
+        self._name = name
+        self._attr = attr
+
+    def __repr__ (self):
+        return "/" + self._name + repr(self._attr)
+
+    def name (self):
+        return self._name
+
+    def attr (self):
+        if isinstance (self._attr, NullAttr):
+            return None
+        return self._attr
+
+class QueryError (Exception): pass
+
+class SoongQuery:
+
+    def attributeAction (self, string, location, tokens):
+        return Attr (tokens[0], tokens[1])
+
+    def subqueryAction (self, string, location, tokens):
+        attribute = tokens[1] if len(tokens) > 1 else NullAttr()
+        return Subquery (tokens[0], attribute)
+
+    def __init__ (self, soong, query_text, prefix = ""):
+
+        self.soong  = soong
+        self.prefix = prefix
+
+        slash = Literal ('/')
+        lbrak = Literal ('[')
+        rbrak = Literal (']')
+        at    = Literal ('@')
+
+        attribute = Suppress(lbrak + at) + name + Suppress(equals) + name + Suppress(rbrak)
+        attribute.setParseAction (self.attributeAction)
+
+        subquery = Suppress(slash) + name + Optional(attribute)
+        subquery.setParseAction (self.subqueryAction)
+
+        query = OneOrMore(subquery) + StringEnd()
+        self.query = query.parseString (query_text)
+
+    def __repr__ (self):
+
+        path = ""
+        data = self.soong
+
+        for subquery in self.query:
+            path += "/" + subquery.name()
+            results = [e for e in data if e.match (subquery)]
+            resultlen = len (results)
+
+            if resultlen == 0:
+                raise QueryError ('Query "' + path + '" did not match')
+
+            if resultlen > 1:
+                raise QueryError ('Query "' + path + '" is ambiguous (' + str(resultlen) + ' results)')
+
+            data = results[0].data()
+
+        result = ""
+        for d in data:
+            name = d.name().upper()
+            data = d.data()[0]
+
+            # Skip section name and defaults
+            if name == "NAME": continue
+            if name == "DEFAULTS": continue
+
+            # Skip sub-entries
+            if not isinstance (data, list): continue
+
+            result += self.prefix + name + " += " + " ".join (data) + "\n"
+
+        return result
+
+class NamedElem:
+
+    def __init__ (self, name, data):
+        self._name = name
+        self._data = data
+
+    def name (self):
+        return self._name
+
+    def data (self):
+        return self._data
+
+    def match (self, subquery):
+        if self._name == subquery.name():
+            attr = subquery.attr()
+            if attr == None:
+                return True
+            attrs = [a for a in self._data if attr.name() == a.name() and attr.value() in a.data()]
+            if len(attrs) > 0:
+                return True
+        return False
+
+    def __repr__ (self):
+        return self._name + ": " + repr(self._data)
+
+class SoongParser:
+
+    def stringListAction (self, string, location, tokens):
+        last = -2 if tokens[-2] == ',' else -1
+        return [tokens[1:last]]
+
+    def stringListJoinAction (self, string, location, tokens):
+        result = tokens[0]
+        if len(tokens) == 2:
+            result += tokens[1]
+        return [result]
+
+    def dictelemAction (self, string, location, tokens):
+        return NamedElem (tokens[0], tokens[2:])
+
+    def elementAction (self, string, location, tokens):
+        return tokens
+
+    def blockAction (self, string, location, tokens):
+        return NamedElem (tokens[0], tokens[1:])
+
+    def variableAction (self, string, location, tokens):
+        self.variables[tokens[0]] = tokens[2]
+
+    def extensionAction (self, string, location, tokens):
+        print ("WARNING: Extension not supported: " + str(tokens))
+
+    def rnameAction (self, string, location, tokens):
+        varname = tokens[0]
+        if not varname in self.variables:
+            raise Exception ("Error: %s: Variable '%s' no found" % (self.file, varname))
+        return self.variables[varname]
+
+    def sectionAction (self, string, location, tokens):
+        result = []
+        last = -2 if tokens[-2] == ',' else -1
+        for token in tokens[1:last]:
+            result.append (token)
+        return result
+
+    def soongAction (self, string, location, tokens):
+        self.data = tokens
+
+    def __init__ (self, basedir):
+
+        self.variables = {}
+        self.file = None
+        self.data = None
+
+        self.basedir = basedir
+
+        comma   = Literal (',')
+        true    = Literal ('true').setParseAction (lambda v : True)
+        false   = Literal ('false').setParseAction (lambda v : False)
+
+        # Variable reference
+        rname = Word (alphanums + "_")
+        rname.setParseAction (self.rnameAction)
+
+        # Boolean literal true/false
+        boolean     = true | false
+
+        # String
+        string     = QuotedString ('"', escChar='\\').setParseAction (lambda s, l, t: t[0])
+        stringjoin = delimitedList (string, delim='+')
+
+        # List of strings
+        stringlist     = Literal ("[") + Optional (delimitedList (stringjoin)) + Optional (comma) + Literal ("]")
+        stringlist.setParseAction (self.stringListAction)
+
+        stringlistjoin = delimitedList (stringlist|rname, delim='+')
+        stringlistjoin.setParseAction (self.stringListJoinAction)
+
+        # Dictionary
+        dictelem    = Forward()
+        dictelem.setParseAction (self.dictelemAction)
+
+        section = Literal ("{") + Optional (delimitedList (dictelem)) + Optional (comma) + Literal ("}")
+        section.setParseAction (self.sectionAction)
+
+        block = name + section
+        block.setParseAction (self.blockAction)
+
+        # Element
+        element   = boolean | string | rname | stringlist | stringlistjoin | stringjoin | section
+        element.setParseAction (self.elementAction)
+
+        dictelem << name + (colon|equals) + element
+
+        variable = name + Literal ("=") + element
+        variable.setParseAction (self.variableAction)
+
+        extension = name + Literal ("+=") + element
+        extension.setParseAction (self.extensionAction)
+
+        self.grammar = ZeroOrMore (block | Suppress (variable) | Suppress (extension)) + StringEnd()
+        self.grammar.setParseAction (self.soongAction)
+
+        # C and C++ style comments
+        self.grammar.ignore (cppStyleComment | cStyleComment)
+
+    def parse (self, subdirs):
+        for subdir in subdirs:
+            bp = Path (self.basedir + "/" + subdir + "/Android.bp")
+            if not bp.is_file():
+                raise Exception ("File " + str(bp) + " does not exist")
+            self.grammar.parseFile (bp.open())
+        return self.data
+
+parser = argparse.ArgumentParser (description = 'Translate soong file to make statements')
+parser.add_argument ('--verbose', help='Verbose output', action='store_true')
+parser.add_argument ('--basedir', help='Base directory', action='store', required=True)
+parser.add_argument ('--prefix',  help='Prepend prefix to variables', action='store', default='')
+parser.add_argument ('--include', help='Directory to load Android.bp from', action='append', required=True)
+parser.add_argument ('query',     help='Query data from soong file')
+args = parser.parse_args()
+
+try:
+    soong  = SoongParser (args.basedir).parse (args.include)
+    query  = SoongQuery (soong, args.query, args.prefix)
+    print (query)
+
+except Exception as e:
+    make_error (e.__class__.__name__ + ": " + str(e))
+    if args.verbose: raise
