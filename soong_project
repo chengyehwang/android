@@ -8,6 +8,7 @@ import copy
 import argparse
 import unittest
 import subprocess
+import json
 
 from pyparsing import \
     Word, Suppress, Literal, alphas, alphanums, nums, Optional, delimitedList, Group, OneOrMore, StringEnd, \
@@ -986,15 +987,17 @@ class TestSoong(unittest.TestCase):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", nargs='?', const=True, default=False)
+    parser.add_argument("-debug", nargs='?', const=True, default=False)
     parser.add_argument("-file", help="parse this file")
+    parser.add_argument("-dir", help="search this dir" )
     args = parser.parse_args()
 
     print(args)
     if args.file is not None:
         find_cmd = 'ls %s'%args.file
-        #find_cmd = 'find . -name "%s"'%args.file
-    elif args.d:
+    elif args.dir:
+        find_cmd = 'find %s -name "Android.bp"'%args.dir
+    elif args.debug:
         find_cmd = 'find . -maxdepth 1 -name "Android.bp"'
     else:
         find_cmd = 'find . -name "Android.bp"'
@@ -1010,5 +1013,6 @@ if __name__ == "__main__":
         SOONG_PARSER.parse(file)
         data[file] = SOONG_PARSER.data()
 
-    print(data)
+    with open('android_bp.json','w') as file_handle:
+        json.dump(data,file_handle)
 
