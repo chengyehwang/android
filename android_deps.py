@@ -52,7 +52,7 @@ def select(file):
 # +
 root = []
 for file in deps:
-    if re.search('golang',file):
+    if re.search('simpleperf',file):
         root.append(file)
 
 for file in root:

@@ -246,7 +246,8 @@ class Soong:
     def varref_action(self, tokens):
         varname = tokens[0]
         if not varname in self.variables():
-            raise MissingVariable(varname)
+            self.variables()[varname]=''
+            #raise MissingVariable(varname)
         return [self.variables()[varname]]
 
     def extension_action(self, tokens):
