@@ -24,4 +24,6 @@ ENV USER=$username
 
 RUN pip3 install pandas pyparsing
 
+RUN apt-get install -y vim
+
 ENTRYPOINT chroot --userspec=$(cat /root/username):$(cat /root/username) / /bin/bash -i
