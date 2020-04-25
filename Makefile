@@ -22,6 +22,7 @@ simpleperf: sync
 
 android_deps:
 	cd $(TAG) ; ../soong_project -o ../android_bp.json
+	cd $(TAG) ; repo list > ../repo_list
 	python3 android_deps.py
 
 du:
