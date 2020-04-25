@@ -24,13 +24,20 @@ with open('repo_list','r') as file_handle:
     repo = file_handle.read()
 proj_table = {}
 for proj_line in repo.split('\n'):
-    match = re.match('(.*)\s*:\s*(.*)', proj_line)
+    match = re.match('(\S+)\s*:\s*(\S+)', proj_line)
     if match:
         proj_dir = match[1]
         proj_name = match[2]
         proj_table[proj_dir] = proj_name
-proj_table = pd.DataFrame.from_dict({'proj_name':proj_table})
-display(proj_table)
+proj_table
+
+def proj_search (dir):
+    dir = os.path.normpath(dir)
+    while len(dir)>0:
+        if dir in proj_table:
+            return proj_table[dir]
+        dir = os.path.dirname(dir)
+    return ''
 
 all_tag = []
 for file in data:
@@ -84,9 +91,10 @@ with open('sync.sh', 'w') as file_handle:
         select(file)
         file_handle.write('#### %s\n'%file)
         for feature in selection:
-            file_handle.write('# %s\n'%feature)
             dir=os.path.dirname(feature_map[feature])
-            file_handle.write('PRO+="%s "\n'%dir)
+            file_handle.write('# %s %s\n'%(feature,dir))
+            pro = proj_search(dir)
+            file_handle.write('PRO+="%s "\n'%pro)
     file_handle.write('echo ${PRO}\n')
     file_handle.write('repo sync -c ${PRO}\n')
 # -
