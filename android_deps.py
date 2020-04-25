@@ -20,6 +20,18 @@ import os
 with open('android_bp.json','r') as file_handle:
     data = json.load(file_handle)
 
+with open('repo_list','r') as file_handle:
+    repo = file_handle.read()
+proj_table = {}
+for proj_line in repo.split('\n'):
+    match = re.match('(.*)\s*:\s*(.*)', proj_line)
+    if match:
+        proj_dir = match[1]
+        proj_name = match[2]
+        proj_table[proj_dir] = proj_name
+proj_table = pd.DataFrame.from_dict({'proj_name':proj_table})
+display(proj_table)
+
 all_tag = []
 for file in data:
     for section in data[file]:
