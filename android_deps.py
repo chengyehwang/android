@@ -20,6 +20,14 @@ import os
 with open('android_bp.json','r') as file_handle:
     data = json.load(file_handle)
 
+all_tag = []
+for file in data:
+    for section in data[file]:
+        for tag in section[1]:
+            if tag not in all_tag:
+                all_tag.append(tag)
+print(all_tag)
+
 deps = {}
 for file in data:
     deps[file] = {'feature':[],'deps':[]}
@@ -27,12 +35,10 @@ for file in data:
         section_name = section[0]
         if 'name' in section[1]:
             deps[file]['feature'].append(section[1]['name'])
-        if 'deps' in section[1]:
-            section_dep = section[1]['deps']
-            deps[file]['deps'].extend(section_dep)
-        if 'static_libs' in section[1]:
-            static_libs = section[1]['static_libs']
-            deps[file]['deps'].extend(static_libs)
+        for tag in ['deps','static_libs','libs','shared_libs']:
+            if tag in section[1]:
+                tag_data = section[1][tag]
+                deps[file]['deps'].extend(tag_data)
 
 print('number of Android.bp: %d\n'%len(data))
 pd.DataFrame.from_dict(deps, orient='index')
