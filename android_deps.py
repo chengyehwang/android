@@ -57,13 +57,14 @@ for file in deps:
     if re.search('simpleperf',file):
         root.append(file)
 
-for file in root:
-    selection = []
-    select(file)
-    print('****%s'%file)
-    for feature in selection:
-        print(feature)
-        print('    ', feature_map[feature])
+with open('sync.sh', 'w') as file_handle:
+    for file in root:
+        selection = []
+        select(file)
+        file_handle.write('#### %s\n'%file)
+        for feature in selection:
+            file_handle.write('# %s\n'%feature)
+            file_handle.write('PRO += %s\n'%feature_map[feature])
 # -
 
 
