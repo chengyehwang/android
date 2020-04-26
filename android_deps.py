@@ -92,8 +92,9 @@ for file in deps:
     if re.search('simpleperf',file):
         root.append(file)
     for arg in args.dir:
-        if re.match('%s.*'%arg, file):
+        if re.match('./%s.*'%arg, file):
             root.append(file)
+print('search: ',root)
 
 with open('sync.sh', 'w') as file_handle:
     file_handle.write('#!/bin/bash\n')

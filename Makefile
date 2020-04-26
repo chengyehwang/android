@@ -14,7 +14,7 @@ TAG=android-10.0.0_r33
 init:
 	mkdir -p $(TAG)
 	export TAG=$(TAG) ; cd $(TAG); ../run_repo_init.sh
-sync:
+sync: sync.sh
 	cd $(TAG) ; ../sync.sh platform/prebuilts/build-tools platform/build platform/build/blueprint platform/prebuilts/go/linux-x86 platform/external/golang-protobuf platform/system/tools/aidl platform/system/tools/hidl platform/system/libhidl platform/test/vts-testcase/hal
 repo_sync:
 	cd $(TAG) ; ../run_repo_sync.sh
@@ -22,8 +22,8 @@ repo_sync:
 simpleperf: sync
 	cd $(TAG) ; ../run_simpleperf.sh
 
-android_deps: Makefile android_bp.json repo_list
-	python3 android_deps.py system/tools/aidl/build system/libhidl system/libhwbinder bionic hardware/interfaces
+sync.sh: android_deps.py Makefile android_bp.json repo_list
+	python3 android_deps.py system/tools/aidl/build system/libhidl system/libhwbinder bionic hardware/interfaces system/core
 android_bp.json: soong_project
 	cd $(TAG)_full ; ../soong_project -o ../android_bp.json
 repo_list: repo
