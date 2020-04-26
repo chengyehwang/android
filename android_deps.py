@@ -16,6 +16,7 @@ import json
 import pandas as pd
 import re
 import os
+import argparse
 
 with open('android_bp.json','r') as file_handle:
     data = json.load(file_handle)
@@ -75,7 +76,14 @@ def select(file):
     for dep in deps[file]['deps']:
         if dep not in selection:
             selection.append(dep)
+            if dep not in feature_map:
+                continue
             select(feature_map[dep])
+
+parser = argparse.ArgumentParser()
+parser.add_argument('dir', type=str, nargs='*',
+                   help='list dir')
+args = parser.parse_args()
 
 
 # +
@@ -83,14 +91,20 @@ root = []
 for file in deps:
     if re.search('simpleperf',file):
         root.append(file)
+    for arg in args.dir:
+        if re.search(arg, file):
+            root.append(file)
 
 with open('sync.sh', 'w') as file_handle:
     file_handle.write('#!/bin/bash\n')
+    file_handle.write('PRO=$@\n')
     for file in root:
         selection = []
         select(file)
-        file_handle.write('#### %s\n'%file)
+        file_handle.write('\n#### %s\n'%file)
         for feature in selection:
+            if feature not in feature_map:
+                continue
             dir=os.path.dirname(feature_map[feature])
             file_handle.write('# %s %s\n'%(feature,dir))
             pro = proj_search(dir)

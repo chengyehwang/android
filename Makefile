@@ -20,10 +20,12 @@ sync:
 simpleperf: sync
 	cd $(TAG); ../run_simpleperf.sh
 
-android_deps: repo
-	cd $(TAG) ; ../soong_project -o ../android_bp.json
-	cd $(TAG) ; ../repo list > ../repo_list
+android_deps: android_bp.json repo_list
 	python3 android_deps.py
+android_bp.json: soong_project
+	cd $(TAG)_full ; ../soong_project -o ../android_bp.json
+repo_list: repo
+	cd $(TAG)_full ; ../repo list > ../repo_list
 
 repo:
 	curl -o ./repo https://storage.googleapis.com/git-repo-downloads/repo && chmod a+x ./repo
