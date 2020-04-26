@@ -15,7 +15,7 @@ init:
 	mkdir -p $(TAG)
 	export TAG=$(TAG) ; cd $(TAG); ../run_repo_init.sh
 sync:
-	cd $(TAG) ; ../sync.sh platform/prebuilts/build-tools
+	cd $(TAG) ; ../sync.sh platform/prebuilts/build-tools platform/build platform/build/blueprint platform/prebuilts/go/linux-x86 platform/external/golang-protobuf
 repo_sync:
 	cd $(TAG) ; ../run_repo_sync.sh
 
