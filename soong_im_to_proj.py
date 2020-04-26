@@ -34,6 +34,22 @@ def search(path, name):
 
 search('android-10.0.0_r33_full/out/soong/.intermediates','.')
 
+def search_mk():
+    with open('android-10.0.0_r33_full/out/soong/Android-aosp_arm64.mk','r') as file_handle:
+        mk = file_handle.read()
+    for line in mk.split('\n'):
+        match = re.match('LOCAL_PATH := (.*)',line)
+        if match:
+            dir = match[1]
+            proj = proj_search(dir)
+            if proj == '':
+                continue
+            if proj not in selection:
+                print('add ',proj)
+                selection.append(proj)
+
+search_mk()
+
 with open('im_sync.sh','w') as file_handle:
     file_handle.write('#!/bin/bash\n')
     file_handle.write('PRO="$@ "\n')

@@ -15,7 +15,7 @@ init:
 	mkdir -p $(TAG)
 	export TAG=$(TAG) ; cd $(TAG); ../run_repo_init.sh
 sync: sync.sh
-	cd $(TAG) ; ../sync.sh platform/prebuilts/build-tools platform/build platform/build/blueprint platform/prebuilts/go/linux-x86 platform/external/golang-protobuf platform/system/tools/aidl platform/system/tools/hidl platform/system/libhidl platform/test/vts-testcase/hal
+	cd $(TAG) ; ../im_sync.sh platform/build platform/build/blueprint platform/prebuilts/go/linux-x86 platform/external/golang-protobuf platform/prebuilts/build-tools platform/prebuilts/vndk/v28 platform/system/tools/aidl platform/system/tools/xsdc platform/system/libhidl platform/system/tools/hidl platform/test/vts
 repo_sync:
 	cd $(TAG) ; ../run_repo_sync.sh
 
