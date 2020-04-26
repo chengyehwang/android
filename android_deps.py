@@ -99,6 +99,7 @@ print('search: ',root)
 with open('sync.sh', 'w') as file_handle:
     file_handle.write('#!/bin/bash\n')
     file_handle.write('PRO="$@ "\n')
+    pro_list = []
     for file in root:
         selection = []
         select(file)
@@ -110,8 +111,11 @@ with open('sync.sh', 'w') as file_handle:
             file_handle.write('# %s %s\n'%(feature,dir))
             pro = proj_search(dir)
             file_handle.write('PRO+="%s "\n'%pro)
+            if pro not in pro_list:
+                pro_list.append(pro)
     file_handle.write('echo ${PRO}\n')
     file_handle.write('repo sync -c ${PRO}\n')
+    file_handle.write('# project list %s\n'% ' '.join(pro_list))
 # -
 
 
