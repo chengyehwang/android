@@ -9,6 +9,7 @@ import argparse
 import unittest
 import subprocess
 import json
+import jsonlines
 
 from pyparsing import \
     Word, Suppress, Literal, alphas, alphanums, nums, Optional, delimitedList, Group, OneOrMore, StringEnd, \
@@ -1054,4 +1055,8 @@ if __name__ == "__main__":
         file_name = 'android_bp.json'
     with open(file_name,'w') as file_handle:
         json.dump(data,file_handle)
+    with jsonlines.open('%sl'%file_name,'w') as file_handle:
+        for data_index in data:
+            data_value = data[data_index]
+            file_handle.write({data_index: data_value})
 
