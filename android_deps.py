@@ -97,7 +97,7 @@ for file in deps:
 
 with open('sync.sh', 'w') as file_handle:
     file_handle.write('#!/bin/bash\n')
-    file_handle.write('PRO=$@\n')
+    file_handle.write('PRO="$@ "\n')
     for file in root:
         selection = []
         select(file)

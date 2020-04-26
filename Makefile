@@ -15,10 +15,12 @@ init:
 	mkdir -p $(TAG)
 	export TAG=$(TAG) ; cd $(TAG); ../run_repo_init.sh
 sync:
+	cd $(TAG) ; ../sync.sh platform/prebuilts/build-tools
+repo_sync:
 	cd $(TAG) ; ../run_repo_sync.sh
 
 simpleperf: sync
-	cd $(TAG); ../run_simpleperf.sh
+	cd $(TAG) ; ../run_simpleperf.sh
 
 android_deps: android_bp.json repo_list
 	python3 android_deps.py
